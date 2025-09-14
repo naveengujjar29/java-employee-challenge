@@ -6,6 +6,9 @@ import org.modelmapper.PropertyMap;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * @author Naveen Kumar
+ */
 @Configuration
 public class ModelMapperConfig {
 
@@ -28,6 +31,5 @@ public class ModelMapperConfig {
         });
 
         return mapper;
-
     }
 }

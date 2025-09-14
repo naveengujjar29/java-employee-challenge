@@ -1,10 +1,12 @@
 package com.reliaquest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.io.Serializable;
 import java.util.UUID;
 
+/**
+ * @author Naveen Kumar
+ */
 public class ServerEmployeeDto implements Serializable {
 
     @JsonProperty("id")
@@ -26,8 +28,7 @@ public class ServerEmployeeDto implements Serializable {
     private String email;
 
     // Default constructor
-    public ServerEmployeeDto() {
-    }
+    public ServerEmployeeDto() {}
 
     // All-args constructor
     public ServerEmployeeDto(UUID id, String name, Integer salary, Integer age, String title, String email) {
@@ -90,13 +91,12 @@ public class ServerEmployeeDto implements Serializable {
 
     @Override
     public String toString() {
-        return "ServerEmployeeDto{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", salary=" + salary +
-                ", age=" + age +
-                ", title='" + title + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        return "ServerEmployeeDto{" + "id="
+                + id + ", name='"
+                + name + '\'' + ", salary="
+                + salary + ", age="
+                + age + ", title='"
+                + title + '\'' + ", email='"
+                + email + '\'' + '}';
     }
 }

@@ -2,9 +2,11 @@ package com.reliaquest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
-
 import java.io.Serializable;
 
+/**
+ * @author Naveen Kumar
+ */
 public class ServerCreateEmployeeDto implements Serializable {
 
     @JsonProperty("name")
@@ -12,13 +14,10 @@ public class ServerCreateEmployeeDto implements Serializable {
     private String name;
 
     @JsonProperty("salary")
-    @NotNull(message = "Salary cannot be null")
-    @Positive(message = "Salary must be greater than zero")
-    private Integer salary;
+    @NotNull(message = "Salary cannot be null") @Positive(message = "Salary must be greater than zero") private Integer salary;
 
     @JsonProperty("age")
-    @NotNull(message = "Age cannot be null")
-    @Min(value = 16, message = "Age must be at least 16")
+    @NotNull(message = "Age cannot be null") @Min(value = 16, message = "Age must be at least 16")
     @Max(value = 75, message = "Age must be at most 75")
     private Integer age;
 
@@ -27,8 +26,7 @@ public class ServerCreateEmployeeDto implements Serializable {
     private String title;
 
     // Default constructor
-    public ServerCreateEmployeeDto() {
-    }
+    public ServerCreateEmployeeDto() {}
 
     // All-args constructor
     public ServerCreateEmployeeDto(String name, Integer salary, Integer age, String title) {
@@ -73,11 +71,10 @@ public class ServerCreateEmployeeDto implements Serializable {
 
     @Override
     public String toString() {
-        return "ServerCreateEmployeeDto{" +
-                "name='" + name + '\'' +
-                ", salary=" + salary +
-                ", age=" + age +
-                ", title='" + title + '\'' +
-                '}';
+        return "ServerCreateEmployeeDto{" + "name='"
+                + name + '\'' + ", salary="
+                + salary + ", age="
+                + age + ", title='"
+                + title + '\'' + '}';
     }
 }

@@ -1,5 +1,8 @@
 package com.reliaquest.api.exception;
 
+/**
+ * @author Naveen Kumar
+ */
 public class MockServerUnavailableException extends RuntimeException {
     public MockServerUnavailableException(String message) {
         super(message);
@@ -9,4 +12,3 @@ public class MockServerUnavailableException extends RuntimeException {
         super(message, cause);
     }
 }
-

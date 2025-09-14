@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: employee-api-test
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=100,expireAfterWrite=30s
+
+# Mock API Configuration for testing
+mock:
+  api:
+    base-url: http://localhost:8112
+
+# Logging Configuration for tests
+logging:
+  level:
+    com.reliaquest: DEBUG
+    org.springframework.cache: DEBUG
+    org.springframework.test: INFO
+    org.springframework.web: DEBUG
+
+# Test-specific configurations
+server:
+  port: 0  # Random port for tests
+
+# Disable security for tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

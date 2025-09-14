@@ -1,10 +1,12 @@
 package com.reliaquest.api.dto;
 
 import jakarta.validation.constraints.*;
-
 import java.io.Serializable;
 import java.util.UUID;
 
+/**
+ * @author Naveen Kumar
+ */
 public class EmployeeDto implements Serializable {
 
     private UUID id;
@@ -12,12 +14,9 @@ public class EmployeeDto implements Serializable {
     @NotBlank(message = "Employee name cannot be blank")
     private String name;
 
-    @NotNull(message = "Employee salary cannot be null")
-    @Positive(message = "Employee salary must be greater than zero")
-    private Integer salary;
+    @NotNull(message = "Employee salary cannot be null") @Positive(message = "Employee salary must be greater than zero") private Integer salary;
 
-    @NotNull(message = "Employee age cannot be null")
-    @Min(value = 16, message = "Employee age must be at least 16")
+    @NotNull(message = "Employee age cannot be null") @Min(value = 16, message = "Employee age must be at least 16")
     @Max(value = 75, message = "Employee age must be at most 75")
     private Integer age;
 
@@ -27,8 +26,7 @@ public class EmployeeDto implements Serializable {
     private String email;
 
     // Default constructor
-    public EmployeeDto() {
-    }
+    public EmployeeDto() {}
 
     // All-args constructor
     public EmployeeDto(UUID id, String name, Integer salary, Integer age, String title, String email) {
@@ -91,14 +89,12 @@ public class EmployeeDto implements Serializable {
 
     @Override
     public String toString() {
-        return "EmployeeDto{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", salary=" + salary +
-                ", age=" + age +
-                ", title='" + title + '\'' +
-                ", email='" + email + '\'' +
-                '}';
+        return "EmployeeDto{" + "id="
+                + id + ", name='"
+                + name + '\'' + ", salary="
+                + salary + ", age="
+                + age + ", title='"
+                + title + '\'' + ", email='"
+                + email + '\'' + '}';
     }
-
 }

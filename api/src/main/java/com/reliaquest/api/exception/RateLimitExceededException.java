@@ -1,5 +1,8 @@
 package com.reliaquest.api.exception;
 
+/**
+ * @author Naveen Kumar
+ */
 public class RateLimitExceededException extends RuntimeException {
 
     private final int retryAfterSeconds;

@@ -2,22 +2,23 @@ package com.reliaquest.api.controller;
 
 import com.reliaquest.api.dto.EmployeeDto;
 import com.reliaquest.api.service.EmployeeService;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
-
-import java.util.List;
-import java.util.UUID;
-
 /**
  * Employee API Controller
  * <p>
  * This controller provides REST endpoints for employee operations.
  * It acts as a proxy to the Mock Employee API running on localhost:8112.
+ */
+/**
+ * @author Naveen Kumar
  */
 @RestController
 @RequestMapping("/api/v1/employee")
@@ -62,11 +63,9 @@ public class EmployeeController {
 
     @GetMapping("/topTenHighestEarningEmployeeNames")
     public ResponseEntity<List<String>> getTopTenHighestEarningEmployeeNames() {
-        log.info(
-                "GET /api/v1/employee/topTenHighestEarningEmployeeNames - Fetching top 10 highest earning employees");
+        log.info("GET /api/v1/employee/topTenHighestEarningEmployeeNames - Fetching top 10 highest earning employees");
         List<String> employeeNames = employeeService.getTop10HighestEarningEmployeeNames();
         return ResponseEntity.ok(employeeNames);
-
     }
 
     @PostMapping()

@@ -2,11 +2,15 @@ package com.reliaquest.api.service;
 
 import com.reliaquest.api.dto.ApiResponse;
 import com.reliaquest.api.dto.EmployeeDto;
+import com.reliaquest.api.exception.EmployeeNotFoundException;
 import com.reliaquest.api.exception.MockServerUnavailableException;
 import com.reliaquest.api.exception.RateLimitExceededException;
 import com.reliaquest.api.model.ServerCreateEmployeeDto;
 import com.reliaquest.api.model.ServerEmployeeDto;
 import com.reliaquest.api.util.RestTemplateUtil;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,11 +25,12 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+/**
+ * @author Naveen Kumar
+ */
 @Service
 public class EmployeeService {
 
@@ -35,9 +40,10 @@ public class EmployeeService {
     private final String mockApiBaseUrl;
     private final ModelMapper modelMapper;
 
-    public EmployeeService(RestTemplateUtil restTemplateUtil,
-                           @Value("${mock.api.base-url:http://localhost:8112}") String mockApiBaseUrl,
-                           ModelMapper modelMapper) {
+    public EmployeeService(
+            RestTemplateUtil restTemplateUtil,
+            @Value("${mock.api.base-url:http://localhost:8112}") String mockApiBaseUrl,
+            ModelMapper modelMapper) {
         this.restTemplateUtil = restTemplateUtil;
         this.mockApiBaseUrl = mockApiBaseUrl;
         this.modelMapper = modelMapper;
@@ -46,21 +52,26 @@ public class EmployeeService {
     /**
      * Get all employees from the mock API Server
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @Cacheable("employees")
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Cacheable(
+            value = "employees",
+            condition = "!@employeeService.shouldBypassCache()",
+            unless = "#result == null or #result.isEmpty()")
     public List<EmployeeDto> getAllEmployees() {
-        log.info("Fetching all employees from mock API Server");
+        log.info("Fetching all employees from mock API Server {}", shouldBypassCache() ? "(bypassing cache)" : "");
         try {
             String url = mockApiBaseUrl + "/api/v1/employee";
 
             ResponseEntity<ApiResponse<List<ServerEmployeeDto>>> response = restTemplateUtil.get(
-                    url,
-                    new ParameterizedTypeReference<ApiResponse<List<ServerEmployeeDto>>>() {
-                    });
+                    url, new ParameterizedTypeReference<ApiResponse<List<ServerEmployeeDto>>>() {});
 
             if (response.getBody() != null && response.getBody().getData() != null) {
-                log.info("Successfully fetched {} employees from mock API Server", response.getBody().getData().size());
+                log.info(
+                        "Successfully fetched {} employees from mock API Server",
+                        response.getBody().getData().size());
                 return response.getBody().getData().parallelStream()
                         .map(serverEmployee -> modelMapper.map(serverEmployee, EmployeeDto.class))
                         .collect(Collectors.toList());
@@ -82,16 +93,22 @@ public class EmployeeService {
     /**
      * Search employees by name
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @Cacheable(value = "employeeSearch", key = "#searchString")
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Cacheable(
+            value = "employeeSearch",
+            key = "#searchString",
+            condition = "!@employeeService.shouldBypassCache()",
+            unless = "#result == null")
     public List<EmployeeDto> searchEmployeesByName(String searchString) {
-        log.info("Searching employees by name: {}", searchString);
+        log.info("Searching employees by name: {} {}", searchString, shouldBypassCache() ? "(bypassing cache)" : "");
         List<EmployeeDto> allEmployees = getAllEmployees();
 
         List<EmployeeDto> filteredEmployees = allEmployees.parallelStream()
-                .filter(employee -> employee.getName() != null &&
-                        employee.getName().toLowerCase().contains(searchString.toLowerCase()))
+                .filter(employee -> employee.getName() != null
+                        && employee.getName().toLowerCase().contains(searchString.toLowerCase()))
                 .collect(Collectors.toList());
 
         log.info("Found {} employees matching search string: {}", filteredEmployees.size(), searchString);
@@ -101,18 +118,25 @@ public class EmployeeService {
     /**
      * Get employee by ID from the mock API Server
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @Cacheable(value = "employeeById", key = "#id")
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Cacheable(
+            value = "employeeById",
+            key = "#id",
+            condition = "!@employeeService.shouldBypassCache()",
+            unless = "#result == null")
     public EmployeeDto getEmployeeById(UUID id) {
-        log.info("Fetching employee with ID: {} from mock API Server", id);
+        log.info(
+                "Fetching employee with ID: {} from mock API Server {}",
+                id,
+                shouldBypassCache() ? "(bypassing cache)" : "");
         try {
             String url = mockApiBaseUrl + "/api/v1/employee/" + id;
 
-            ResponseEntity<ApiResponse<ServerEmployeeDto>> response = restTemplateUtil.get(
-                    url,
-                    new ParameterizedTypeReference<ApiResponse<ServerEmployeeDto>>() {
-                    });
+            ResponseEntity<ApiResponse<ServerEmployeeDto>> response =
+                    restTemplateUtil.get(url, new ParameterizedTypeReference<ApiResponse<ServerEmployeeDto>>() {});
 
             if (response.getBody() != null && response.getBody().getData() != null) {
                 log.info("Successfully fetched employee with ID: {} from mock API Server", id);
@@ -121,7 +145,7 @@ public class EmployeeService {
             throw new RuntimeException("Employee not found in mock API Server");
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Employee with ID: {} not found in mock API Server", id);
-            throw new RuntimeException("Employee not found", e);
+            throw new EmployeeNotFoundException("Employee not found", e);
         } catch (HttpClientErrorException e) {
             handleRateLimitException(e);
             throw new RuntimeException("Failed to fetch employee from mock API Server", e);
@@ -138,11 +162,16 @@ public class EmployeeService {
     /**
      * Get highest salary among all employees
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @Cacheable("highestSalary")
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Cacheable(
+            value = "highestSalary",
+            condition = "!@employeeService.shouldBypassCache()",
+            unless = "#result == null or #result <= 0")
     public Integer getHighestSalary() {
-        log.info("Finding highest salary among all employees");
+        log.info("Finding highest salary among all employees {}", shouldBypassCache() ? "(bypassing cache)" : "");
         List<EmployeeDto> allEmployees = getAllEmployees();
 
         Integer highestSalary = allEmployees.parallelStream()
@@ -158,11 +187,16 @@ public class EmployeeService {
     /**
      * Get top 10 highest earning employee names
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @Cacheable("top10HighestEarningEmployeeNames")
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Cacheable(
+            value = "top10HighestEarningEmployeeNames",
+            condition = "!@employeeService.shouldBypassCache()",
+            unless = "#result == null or #result.isEmpty()")
     public List<String> getTop10HighestEarningEmployeeNames() {
-        log.info("Finding top 10 highest earning employees");
+        log.info("Finding top 10 highest earning employees {}", shouldBypassCache() ? "(bypassing cache)" : "");
         List<EmployeeDto> allEmployees = getAllEmployees();
 
         List<String> topEmployeeNames = allEmployees.parallelStream()
@@ -179,9 +213,14 @@ public class EmployeeService {
     /**
      * Create employee in the mock API Server
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @CacheEvict(value = {"employees", "employeeSearch", "employeeById", "highestSalary", "top10HighestEarningEmployeeNames"}, allEntries = true)
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @CacheEvict(
+            value = {"employees", "employeeSearch", "employeeById", "highestSalary", "top10HighestEarningEmployeeNames"
+            },
+            allEntries = true)
     public EmployeeDto createEmployee(EmployeeDto input) {
         try {
             log.info("Creating employee with name: {} in mock API Server", input.getName());
@@ -191,10 +230,7 @@ public class EmployeeService {
             ServerCreateEmployeeDto serverInput = modelMapper.map(input, ServerCreateEmployeeDto.class);
 
             ResponseEntity<ApiResponse<ServerEmployeeDto>> response = restTemplateUtil.post(
-                    url,
-                    serverInput,
-                    new ParameterizedTypeReference<ApiResponse<ServerEmployeeDto>>() {
-                    });
+                    url, serverInput, new ParameterizedTypeReference<ApiResponse<ServerEmployeeDto>>() {});
 
             if (response.getBody() != null && response.getBody().getData() != null) {
                 log.info("Successfully created employee with name: {} in mock API Server", input.getName());
@@ -218,9 +254,14 @@ public class EmployeeService {
     /**
      * Delete employee by ID
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
-    @CacheEvict(value = {"employees", "employeeSearch", "employeeById", "highestSalary", "top10HighestEarningEmployeeNames"}, allEntries = true)
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @CacheEvict(
+            value = {"employees", "employeeSearch", "employeeById", "highestSalary", "top10HighestEarningEmployeeNames"
+            },
+            allEntries = true)
     public String deleteEmployeeById(UUID id) {
 
         log.info("Deleting employee with ID: {}", id);
@@ -243,17 +284,17 @@ public class EmployeeService {
     /**
      * Delete employee by name from the mock API Server
      */
-    @Retryable(value = {
-            HttpClientErrorException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
+    @Retryable(
+            value = {HttpClientErrorException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 5000))
     private boolean deleteEmployeeByName(String name) {
         try {
             log.info("Deleting employee with name: {} from mock API Server", name);
             String url = mockApiBaseUrl + "/api/v1/employee/" + name;
 
-            ResponseEntity<ApiResponse<Boolean>> response = restTemplateUtil.delete(
-                    url,
-                    new ParameterizedTypeReference<ApiResponse<Boolean>>() {
-                    });
+            ResponseEntity<ApiResponse<Boolean>> response =
+                    restTemplateUtil.delete(url, new ParameterizedTypeReference<ApiResponse<Boolean>>() {});
 
             if (response.getBody() != null && response.getBody().getData() != null) {
                 boolean deleted = response.getBody().getData();
@@ -263,7 +304,7 @@ public class EmployeeService {
             return false;
         } catch (HttpClientErrorException.NotFound e) {
             log.warn("Employee with name: {} not found in mock API Server", name);
-            throw new RuntimeException("Employee not found", e);
+            throw new EmployeeNotFoundException("Employee not found", e);
         } catch (HttpClientErrorException e) {
             handleRateLimitException(e);
             throw new RuntimeException("Failed to delete employee from mock API Server", e);
@@ -278,15 +319,31 @@ public class EmployeeService {
     }
 
     /**
+     * Check if cache should be bypassed based on request header
+     */
+    public boolean shouldBypassCache() {
+        try {
+            ServletRequestAttributes attributes =
+                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                String bypassHeader = attributes.getRequest().getHeader("X-Cache-Bypass");
+                return "true".equalsIgnoreCase(bypassHeader);
+            }
+        } catch (Exception e) {
+            log.debug("Could not access request headers: {}", e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Handle rate limiting exceptions and convert them to our custom exception
      */
     private void handleRateLimitException(HttpClientErrorException ex) {
         if (ex.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
             log.warn("Rate limit exceeded from server: {}", ex.getMessage());
-            throw new RateLimitExceededException("Server is currently rate limiting requests. Please try again later.",
-                    ex);
+            throw new RateLimitExceededException(
+                    "Server is currently rate limiting requests. Please try again later.", ex);
         }
         throw ex;
     }
-
 }

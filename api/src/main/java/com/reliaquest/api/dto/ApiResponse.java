@@ -7,6 +7,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @param <T> The type of data contained in the response
  */
+/**
+ * @author Naveen Kumar
+ */
 public class ApiResponse<T> {
 
     @JsonProperty("data")
@@ -16,8 +19,7 @@ public class ApiResponse<T> {
     private String status;
 
     // Default constructor
-    public ApiResponse() {
-    }
+    public ApiResponse() {}
 
     // All-args constructor
     public ApiResponse(T data, String status) {
@@ -44,9 +46,6 @@ public class ApiResponse<T> {
 
     @Override
     public String toString() {
-        return "MockApiResponse{" +
-                "data=" + data +
-                ", status='" + status + '\'' +
-                '}';
+        return "MockApiResponse{" + "data=" + data + ", status='" + status + '\'' + '}';
     }
 }

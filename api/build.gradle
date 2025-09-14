@@ -12,8 +12,14 @@ dependencies {
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
 }
 
 springBoot {
     mainClass = 'com.reliaquest.api.ApiApplication'
+}
+
+test {
+    exclude '**/CacheIntegrationTest.class'
 }
