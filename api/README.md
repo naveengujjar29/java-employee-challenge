@@ -338,6 +338,93 @@ logging:
 
 3. **Access endpoints at:** `http://localhost:8111/api/v1/employee`
 
+### Scalability Analysis & Improvement Strategy for Employee API ( To Be Implemented)
+
+### Current Scalability Issues Identified
+
+### **Issue 1: Memory Bloat with Large Datasets**
+
+#### **Problem Analysis:**
+- **Root Cause:** `getAllEmployees()` method loads entire dataset into memory at once
+- **Impact:** Multiple operations call `getAllEmployees()` and process data in memory, causing memory bloat
+- **Risk:** No limits on data size from third-party mock server can lead to OutOfMemoryError
+- **Current Behavior:** All data processing happens in-memory using parallel streams and collectors
+
+#### **Specific Code Issues:**
+- **Line 75-77:** `getAllEmployees()` uses `parallelStream().collect(Collectors.toList())` - loads ALL data into memory
+- **Line 106:** `searchEmployeesByName()` calls `getAllEmployees()` first, then filters in memory
+- **Line 171:** `getHighestSalary()` calls `getAllEmployees()` first, then processes in memory
+- **Line 195:** `getTop10HighestEarningEmployeeNames()` calls `getAllEmployees()` first, then sorts in memory
+
+### **Issue 2: No Pagination Support**
+
+#### **Problem Analysis:**
+- **Missing Features:** No page size limits, offset/limit parameters, or pagination metadata
+- **Impact:** Clients receive complete datasets regardless of size
+- **Performance:** Large datasets cause slow response times and high memory usage
+- **User Experience:** No control over data volume per request
+
+### **Issue 3: Inefficient Data Processing Pattern**
+
+#### **Problem Analysis:**
+- **Redundant Calls:** Multiple operations make separate calls to `getAllEmployees()`
+- **Memory Inefficiency:** Each operation loads and processes the entire dataset
+- **No Streaming:** No chunked or streaming processing for large datasets
+- **No Caching Strategy:** No intelligent caching for frequently accessed data
+
+## **Proposed Solutions & Architecture**
+
+### **Solution 1: Database Integration with Background Sync (Recommended)**
+
+#### **Architecture Overview:**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Client App    │───▶│  Employee API   │───▶│  Local Database │
+│                 │    │  (Port 8111)    │    │  (H2/PostgreSQL)│
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │  Caffeine Cache │
+                       │  (1 min TTL)    │
+                       └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │  Mock API       │
+                       │  (Sync Service) │
+                       └─────────────────┘
+```
+
+#### **Key Components:**
+1. **Local Database Layer:** Store employee data locally for fast access
+2. **Background Sync Service:** Periodically sync data from Mock API to local database
+3. **Pagination Support:** Database-level pagination with metadata
+4. **Advanced Querying:** Database indexes for fast filtering and sorting
+
+### **Solution 2: Streaming & Chunked Processing (Immediate)**
+
+#### **Approach:**
+1. **Streaming Responses:** Return data as JSON lines (NDJSON) for large datasets
+2. **Chunked Processing:** Process data in batches to avoid memory issues
+3. **Memory Monitoring:** Implement memory usage tracking and circuit breakers
+4. **Pagination Parameters:** Add page, size, sort parameters to existing endpoints
+
+### **Solution 3: Hybrid Approach (Phased Implementation)**
+
+#### **Phase 1: Immediate Improvements (No Database)**
+- Add pagination parameters to existing endpoints
+- Implement streaming for large datasets
+- Add memory monitoring and limits
+- Implement data chunking and processing
+
+#### **Phase 2: Database Integration**
+- Add local database for employee data
+- Implement background sync service
+- Migrate to database-backed pagination
+- Add advanced querying capabilities
+
+
 ## Authors
 - **Naveen Kumar** - Initial implementation and architecture design
 
